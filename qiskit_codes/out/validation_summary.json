@@ -1,0 +1,17 @@
+{
+ "n_vertex_terms_l2_multiplet": 11,
+ "dev_E1_E2": 7.105427357601002e-15,
+ "dev_E1_E3_SB": 1.7763568394002505e-14,
+ "pauli_terms_SB_5mode": 1103,
+ "dev_E1_E3_gray_spectrum": 1.5631940186722204e-13,
+ "pauli_terms_gray_5mode": 1103,
+ "qubits_5mode_d4": 10,
+ "comm_H_Lz": 0.0,
+ "comm_H_parity": 7.105427357601002e-15,
+ "comm_H_L2_permode_cutoff": 22.157352766412746,
+ "comm_H_L2_totalN_cutoff": 6.661338147750939e-16,
+ "Gop_22_from_21_21": 0.2207281154418226,
+ "Gop_20_from_21_2m1": -0.09011187578643429,
+ "Gop_20_from_20_20": 0.18022375157286857,
+ "forbidden_DeltaLz4": 0.0
+}

@@ -1,0 +1,82 @@
+{
+ "note": "circuit diagrams drawn from the production constructors of nhq.circuits; boxed blocks are verified against the raw production circuits by unitary comparison.",
+ "Q1": {
+  "modes": [
+   [
+    2,
+    0
+   ]
+  ],
+  "d": 4,
+  "g_tilde": 12.0,
+  "dt": 0.25,
+  "reps": 1,
+  "qubits": 2,
+  "pauli_terms": 7,
+  "depth": 25,
+  "cx": 10,
+  "global_phase": 5.952466393296513,
+  "vertex": 0.17767435533635967
+ },
+ "Q2": {
+  "modes": [
+   [
+    2,
+    1
+   ],
+   [
+    2,
+    0
+   ]
+  ],
+  "d": 4,
+  "occ0": [
+   0,
+   1
+  ],
+  "qubits": 4,
+  "pauli_terms": 17,
+  "n_segments": 3,
+  "dt_segment": 2.0,
+  "reps_per_segment": 2,
+  "segment_depth": 266,
+  "segment_cx": 148,
+  "boxed_vs_raw_maxdev": 0.0
+ },
+ "Q3": {
+  "modes": [
+   [
+    2,
+    1
+   ],
+   [
+    2,
+    -1
+   ],
+   [
+    2,
+    0
+   ]
+  ],
+  "d": 2,
+  "occ0": [
+   0,
+   0,
+   1
+  ],
+  "system_qubits": 3,
+  "ancilla": 3,
+  "pauli_terms": 11,
+  "t": 1.0,
+  "W_probe": {
+   "pauli": "Z",
+   "qubit": 2
+  },
+  "V_probe": {
+   "pauli": "X",
+   "qubit": 0
+  },
+  "production_depth": 369,
+  "boxed_vs_production_maxdev": 1.2352010775349767e-15
+ }
+}

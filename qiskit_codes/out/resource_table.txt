@@ -1,0 +1,3 @@
+register | qubits | Pauli terms | cx/step | depth/step
+l=2 subset (3 modes) | 6 | 283 | 3690 | 4909
+l=2 multiplet (5 modes) | 10 | 1103 | 12274 | 16934

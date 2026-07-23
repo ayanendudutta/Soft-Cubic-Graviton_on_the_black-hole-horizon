@@ -1,0 +1,13 @@
+{
+ "claims": [
+  "OTOC bounded, no clean exponential window at accessible sizes:",
+  "no Lyapunov exponent extracted for H3; no MSS saturation claimed."
+ ],
+ "E1_maxC_state": 2.072316890651974,
+ "E1_maxC_thermal": 0.9865969689699784,
+ "E1_beta": 6.283185307179586,
+ "E1b_lambda_fit_on_cosh2": 2.0040685186876903,
+ "E1b_lambda_expected": 2.0,
+ "E2_max_absdev": 0.10207469272340486,
+ "E2_shots": 16384
+}
