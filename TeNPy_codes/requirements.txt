@@ -1,0 +1,10 @@
+# MPS / tensor-network extension of the paper -- dependencies
+# Tested with Python 3.12.  Install with:  pip install -r requirements.txt
+numpy>=1.24
+scipy>=1.10
+sympy>=1.11
+matplotlib>=3.6
+physics-tenpy==1.1.0
+# (Qiskit is NOT needed for the MPS climb.  The two validate_*.py scripts
+#  additionally need the Qiskit suite nhq/ from the sibling qiskit_codes/
+#  directory, reachable via NHQ_QISKIT_DIR; the climb itself does not.)

@@ -164,6 +164,7 @@ def main():
         axes[1].set_ylabel(r"measured inelasticity $\eta$")
         axes[1].set_title("noise manufactures $\\eta$: report with fidelity")
         axes[1].legend(fontsize=7)
+        fig.subplots_adjust(wspace=0.3)  # gap
         save_fig(fig, "fig_G1_noise.pdf")
 
     save_json("summary_noise.json", summary)

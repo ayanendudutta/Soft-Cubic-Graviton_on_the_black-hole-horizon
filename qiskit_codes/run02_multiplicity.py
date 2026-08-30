@@ -296,7 +296,7 @@ def main():
         ax.set_yscale("log")
         ax.set_title(rf"late-time multiplicity, $\tilde g={G_REP:g}$, "
                      rf"$d={d_head}$, $L_z=0$")
-        ax.legend(fontsize=7)
+        ax.legend(fontsize=7,loc='lower left')
         save_fig(fig, "fig_B3_pbarN.pdf")
 
     # ---------------- A4: structure ablation (non-tautology test) ---------

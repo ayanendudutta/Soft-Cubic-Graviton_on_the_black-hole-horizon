@@ -22,9 +22,13 @@ The second-quantized Hamiltonian built from this vertex is then evolved in real
 time on Qiskit/Aer, with every circuit result overlaid on an exact-diagonalization
 counterpart.
 
-This repository contains both halves: the symbolic derivation and its
-independent numerical verifications, and the complete simulation suite that
-produces every figure and every quoted number of the paper.
+This repository contains three parts: the symbolic derivation and its
+independent numerical verifications; the exact-diagonalization and Qiskit/Aer
+simulation suite that produces every figure and every quoted number of the main
+text; and a tensor-network (matrix-product-state) extension that lifts the
+same Hamiltonian off the small exact-diagonalization registers and climbs the
+multipole ladder to `l_max = 7` (60 modes, the 120-qubit target of Appendix H),
+testing whether the perturbative rigidity persists as the register grows.
 
 ---
 
@@ -47,23 +51,38 @@ produces every figure and every quoted number of the paper.
 │   ├── verify_euler_identities.py Euler-homogeneity check of -1/4 and kappa^3/6
 │   └── rerun_derived_kernel.py    the derived weight propagated into the model
 │
-└── qiskit_codes/                simulation suite
-    ├── nhq/                       the simulation package
-    │   ├── encoding.py              standard-binary / Gray / unary bosonic encodings
-    │   ├── model.py                 vertex tables, Fock engines, observables, references
-    │   ├── circuits.py              SparsePauliOp Hamiltonians, Trotter circuits, Aer runs
-    │   ├── tracka.py                elastic backbone: grid IHO and the Dray–'t Hooft shift
-    │   └── util.py                  output paths, smoke-test mode, figure style
-    ├── run00_validate.py          multi-engine validation table
-    ├── run01_tracka.py            elastic-benchmark calibration
-    ├── run02_multiplicity.py      multiplicity dynamics, onset, ablation, multi-l
-    ├── run03_page_profile.py      mode-bipartition entanglement profiles
-    ├── run04_spectral.py          two-sided spectral statistics
-    ├── run05_otoc.py              squared commutator, dense and circuit
-    ├── run06_cascade.py           resonance audit, cascade, power laws
-    ├── run07_noise_resources.py   transpiled resources and depolarizing-noise budget
-    ├── run08_circuit_figures.py   the three circuit diagrams
-    └── out/                       figures, raw arrays, and JSON summaries
+├── qiskit_codes/                simulation suite
+│   ├── nhq/                       the simulation package
+│   │   ├── encoding.py              standard-binary / Gray / unary bosonic encodings
+│   │   ├── model.py                 vertex tables, Fock engines, observables, references
+│   │   ├── circuits.py              SparsePauliOp Hamiltonians, Trotter circuits, Aer runs
+│   │   ├── tracka.py                elastic backbone: grid IHO and the Dray–'t Hooft shift
+│   │   └── util.py                  output paths, smoke-test mode, figure style
+│   ├── run00_validate.py          multi-engine validation table
+│   ├── run01_tracka.py            elastic-benchmark calibration
+│   ├── run02_multiplicity.py      multiplicity dynamics, onset, ablation, multi-l
+│   ├── run03_page_profile.py      mode-bipartition entanglement profiles
+│   ├── run04_spectral.py          two-sided spectral statistics
+│   ├── run05_otoc.py              squared commutator, dense and circuit
+│   ├── run06_cascade.py           resonance audit, cascade, power laws
+│   ├── run07_noise_resources.py   transpiled resources and depolarizing-noise budget
+│   ├── run08_circuit_figures.py   the three circuit diagrams
+│   └── out/                       figures, raw arrays, and JSON summaries
+│
+└── TeNPy_codes/                 tensor-network (MPS) extension: climbing the ladder
+    ├── requirements.txt           dependencies (physics-tenpy; no Qiskit for the climb)
+    ├── run_all.sh                 climb l = 2..7, then build the figures
+    ├── run_mps_climb.py           the checkpointed, resumable climb driver
+    ├── make_mps_figures.py        the framed climb figures figM1..figM4
+    ├── make_fig_v3.py             the two-tier (d = 4 climb + d = 8 check) figures
+    ├── validate_tenpy_vs_ed.py    two-engine spectrum + dynamics check vs nhq
+    ├── validate_dynamics.py       hybrid-evolver dynamics check vs nhq
+    ├── nhq_tenpy/                 the tensor-network package
+    │   ├── vertex.py                cubic-vertex table, transcribed from nhq.model
+    │   ├── graviton_mps.py          the Lz-graded MPO model
+    │   ├── evolve.py                hybrid ExpMPO/TDVP evolver + MPS observables
+    │   └── figstyle.py              self-contained framed matplotlib style
+    └── out_mps/                    climb summaries, arrays, and figures
 ```
 
 `out/` is committed: it holds the exact figures and numbers appearing in the
@@ -84,6 +103,7 @@ Every result in the paper was produced on this stack:
 | SciPy | 1.17 |
 | SymPy | 1.14 |
 | Matplotlib | 3.10 |
+| TeNPy (`physics-tenpy`) | 1.1.0 |
 
 ```bash
 python3 -m venv venv && source venv/bin/activate
@@ -92,7 +112,14 @@ pip install "qiskit==2.4.2" "qiskit-aer==0.17.2" \
 ```
 
 `pylatexenc` is required only by `run08_circuit_figures.py`, which renders
-circuit diagrams with LaTeX-style gate labels.
+circuit diagrams with LaTeX-style gate labels. `physics-tenpy==1.1.0` is
+required only by the tensor-network extension; the derivation and the Qiskit
+suite do not need it. Its dependencies are pinned in
+`TeNPy_codes/requirements.txt`:
+
+```bash
+pip install -r TeNPy_codes/requirements.txt
+```
 
 No GPU, no hardware credentials, and no network access are required. The
 simulation suite runs on a laptop.
@@ -232,7 +259,156 @@ from any working directory.
 
 ---
 
-## What each verification establishes
+## The tensor-network extension
+
+`TeNPy_codes/` lifts the same Hamiltonian `H = H2^grav + H3` off the small
+exact-diagonalization registers and represents it as a matrix-product operator,
+so real-time evolution can reach mode numbers far beyond exact diagonalization.
+The single-`(2,0)`-graviton quench is evolved from the `l = 2` multiplet
+(5 modes) up to `l_max = 7` (60 modes, the 120-qubit target of Appendix H),
+and the diagnostics the exact-diagonalization registers were too small to
+settle are read off: whether the inelasticity, the sub-Page entanglement, and
+the bounded bond dimension **persist** as the tower grows.
+
+### Method
+
+- **Conserved charge.** `H3` changes total boson number by `+-1`, so total `N`
+  is not conserved and cannot block-diagonalize the problem. What is conserved
+  exactly is the azimuthal charge `Lz = sum_i m_i n_i`. Each bosonic mode `i` is
+  therefore given a U(1) charge `m_i * n_i`, so the global conserved number is
+  `Lz`; a cubic term `b_i^dag b_j^dag b_k` carries net charge
+  `m_i + m_j - m_k` and TeNPy admits it into the MPO only when that is zero —
+  i.e. only when `m1 + m2 = m3` — so the magnetic selection rule is enforced by
+  the symmetry structure itself. Working in the fixed `Lz = 0` sector is what
+  makes the climb to 45 and 60 modes tractable.
+- **Evolution (hybrid).** `H3` is a genuinely long-range three-body vertex, so
+  two-site TDVP cannot grow entanglement from the product initial state (the
+  long-range cold-start). Forming `exp(-iH dt)` as an MPO (Zaletel W^II) does
+  seed the entanglement, but its cost `~(chi * chi_MPO)^2` per step grows with
+  the MPO bond dimension `chi_MPO` (41, 114, 228, 429 at `l = 3, 4, 5, 6`). The
+  evolver therefore runs a short, tightly-capped ExpMPO warm-up purely to move
+  the state off the product manifold, then two-site TDVP — whose cost
+  `~chi^2 * chi_MPO` is linear in `chi_MPO` — for the bulk of the trajectory.
+- **Site ordering.** As orbital ordering matters in quantum-chemistry DMRG, the
+  default `paired_m` order places `+m` and `-m` partners adjacent, localizing
+  the dominant `(m, -m)` splitting channel and minimizing the bond dimension.
+- **Observables without the statevector.** `P(N)` is obtained from the
+  characteristic function `<exp(i theta N_tot)>` — a bond-dimension-one product
+  operator contracted as a transfer network — by inverse DFT; entanglement is
+  read from the MPS Schmidt spectra. The `d^M` statevector is never formed.
+
+### Two-engine validation
+
+The same engine-against-engine discipline as the rest of the repository carries
+over: at the `l = 2` register (small enough to diagonalize densely) the MPO and
+the reference occupation-basis engine `nhq.model` must agree to machine
+precision, and the real-time dynamics of the quench must agree between exact
+block evolution and near-exact TDVP.
+
+```bash
+cd TeNPy_codes
+python3 validate_tenpy_vs_ed.py     # full Lz=0 spectrum + dynamics, l=2, d=4 and d=6
+python3 validate_dynamics.py        # hybrid evolver vs exact block evolution, l=2
+```
+
+Both scripts import the reference engine from the sibling `qiskit_codes/`
+directory automatically; set `NHQ_QISKIT_DIR` only to point elsewhere. The
+spectrum check agrees to `~1e-13` over the full `Lz = 0` spectrum
+(`5.3e-14` at `d = 4`, `2.2e-13` at `d = 6`), and the dynamics agree to
+`~1e-3` (integrator-limited, the same tolerance as the Qiskit Trotter engine),
+improving as `dt` is reduced.
+
+### Running the climb
+
+```bash
+cd TeNPy_codes
+bash run_all.sh                              # l = 2..7 to completion, then figures
+```
+
+or one register at a time:
+
+```bash
+python3 run_mps_climb.py --lmax 2 --walltime 1e9     # 5 modes
+python3 run_mps_climb.py --lmax 3 --walltime 1e9     # 12 modes
+python3 run_mps_climb.py --lmax 4 --walltime 1e9     # 21 modes
+python3 run_mps_climb.py --lmax 5 --walltime 1e9     # 32 modes
+python3 run_mps_climb.py --lmax 6 --walltime 1e9     # 45 modes
+python3 run_mps_climb.py --lmax 7 --walltime 1e9     # 60 modes
+```
+
+The run is **resumable**: the full MPS state and running record are checkpointed
+to `out_mps/climb_l{L}_d{d}.ckpt` after every snapshot, so re-running the same
+command resumes from the last snapshot. `--walltime S` makes a run stop and
+checkpoint after `S` seconds (default 240); set it large (`1e9`) to run
+straight through. On completion a trajectory prints `TRAJECTORY COMPLETE`,
+writes its `.json` and `.npz`, and deletes the checkpoint.
+
+The defaults are the validated, converged settings: per-mode cutoff `d = 4`,
+reduced coupling `g = 12`, evolution time `t = 12` in units `R_S/c`, integrator
+step `dt = 0.1`, bond-dimension cap `chi = 24`, with a two-step ExpMPO warm-up
+at a tight cap. The climb cost grows steeply with depth; the low multipoles are
+quick, while `l = 6, 7` are heavy. Peak memory stays well under a gigabyte
+throughout. `out_mps/` ships with the completed reference runs for `l = 2..7`,
+so the figures can be rebuilt without re-running the climb.
+
+| flag | default | meaning |
+|---|---|---|
+| `--lmax` | (required) | highest multipole; modes `M = (l_max+1)^2 - 4` |
+| `--d` | 4 | per-mode boson cutoff (local dimension) |
+| `--g` | 12.0 | reduced coupling `g-tilde` |
+| `--tfinal` | 12 | evolution time in units `R_S/c` |
+| `--dt` | 0.1 | integrator step |
+| `--chimax` | 24 | bond-dimension cap |
+| `--svdmin` | 1e-10 | Schmidt-value floor |
+| `--walltime` | 240 | per-call wall-clock budget (s); set 1e9 to finish |
+| `--nwarmup` | 2 | ExpMPO warm-up steps |
+| `--warmupchi` | 8 | tight bond cap during warm-up |
+
+### The figures
+
+```bash
+python3 make_mps_figures.py      # figM1..figM4  (the mode-climb figures, d = 4)
+python3 make_fig_v3.py           # fig_H2_summary, fig_H3_tower  (two-tier d = 4 + d = 8)
+```
+
+`make_mps_figures.py` reads every `out_mps/climb_l*_d4.npz` and writes: the
+late-time entanglement profile across the mode chain (`figM1`), the four-panel
+summary of late-time inelasticity, peak entanglement, mean number, the `l = 4`
+bond-dimension convergence, and the truncation error versus mode number
+(`figM2`), the late-time multiplicity tower `P(N)` per depth (`figM3`), and the
+peak-entanglement and truncation-error dynamics (`figM4`). `make_fig_v3.py`
+reads both the `d = 4` mode-climb and the `d = 8` occupation-refinement runs and
+writes the two two-tier figures used in Appendix H, showing that the saturated
+observables are robust to both truncation axes.
+
+The mode-climb figures use the fixed `d = 4` runs so that each mode number
+appears once; the `d = 8, 16, 32` runs are the occupation-axis refinement and
+enter only through `make_fig_v3.py`. The half-cut entropy `S_half` is not a
+faithful size-independent entanglement measure under the paired-`m` ordering
+(the central bond drifts into the weakly-populated high-`|m|` tail), so the
+figures report the peak `S_max` and the full profile instead — the correct
+observables for this site ordering.
+
+### What the climb shows
+
+The perturbative rigidity and the sub-Page entanglement persist to `M = 60`
+modes: the inelasticity converges to a finite `eta-bar ~ 0.156`, the peak
+entanglement saturates at an area-law `S_max ~ 0.45` nats, the mean graviton
+number saturates near `N-bar ~ 1.20`, and the final truncation error stays
+below `10^-3` at fixed bond dimension — the sharp, quantitative statement that
+the dynamics is not scrambling, since a scrambling state could not be held by a
+small-bond MPS. The mode-axis climb (`d = 4`) and the occupation-axis
+refinement (`d = 8`) agree across the tower, so the saturated observables are
+robust to both truncations.
+
+**Scope.** The tensor-network method extends the *dynamical and entanglement*
+observables (inelasticity, `P(N,t)`, entanglement, the multiplicity tower) to
+large `M`. It does not extend the interior level-spacing statistics `<r>` —
+those need many highly-entangled interior eigenstates, outside standard
+DMRG/TDVP — so that result stays at its exact-diagonalization register, as the
+paper states.
+
+
 
 **The vanishing theorem** is checked four independent ways, and the checks do
 not share a substrate:
@@ -350,7 +526,10 @@ what any number produced here can mean.
   window exists by construction, and serves to validate the fitting pipeline.
 - The spectral statistics of the physical sectors are reported as an indicative
   trend on Hilbert spaces too small to establish a universality class, and are
-  not extrapolated.
+  not extrapolated. The tensor-network climb extends the dynamical and
+  entanglement observables to 60 modes but does **not** extend these
+  level-spacing statistics, which require many highly-entangled interior
+  eigenstates and stay at the exact-diagonalization register.
 - All quantum-circuit results are Aer statevector or density-matrix
   simulations. Hardware execution is deferred on the budget computed in
   `run07`: at ten qubits, a ten-percent bias on the inelasticity requires a
@@ -359,6 +538,13 @@ what any number produced here can mean.
   register) dwarfs the ideal signal — noise manufactures apparent particle
   production, so any hardware measurement of the inelasticity must be reported
   jointly with the fidelity.
+- The tensor-network climb is a classical MPS simulation. Its convergence
+  controls are the per-mode cutoff `d` and the bond-dimension cap `chi`; both
+  are checked (the `d = 4` climb against a `d = 8` refinement, and `chi` against
+  a `chi = 24, 32, 48, 96` sweep at `l = 4`), and the truncation error is
+  reported alongside every trajectory. The area-law reading is meaningful only
+  while that error stays small — which it does across the whole tower, and whose
+  eventual growth would itself signal the onset of scrambling.
 
 ---
 
@@ -366,8 +552,3 @@ what any number produced here can mean.
 
 Please cite the paper when using this code. A. Dutta, *The leading-soft cubic
 graviton self-interaction on the black-hole horizon*.
-
-## Acknowledgments
-
-The author thanks Dr. Diptarka Das (IIT Kanpur) for valuable discussions and
-insights.

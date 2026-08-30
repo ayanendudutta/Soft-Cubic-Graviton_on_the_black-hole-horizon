@@ -77,7 +77,7 @@ def main():
                 label=r"$\cosh^2(\Omega t)$")
         ax.set_xlabel("$t$")
         ax.set_ylabel(r"$C(t)=\langle|[\hat u(t),\hat p]|^2\rangle$")
-        ax.set_title("bare IHO OTOC (c-number commutator; not MSS)")
+        ax.set_title("bare IHO OTOC (c-number commutator)")
         ax.legend()
         save_fig(fig, "fig_A2_otoc.pdf")
         save_npz("data_A2_otoc.npz", ts=ts, C=C)

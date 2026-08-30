@@ -169,6 +169,7 @@ def main():
         axes[1].set_ylabel(r"$P(N_\phi = 4)$")
         axes[1].set_title("four-scalar yield: the new channel")
         axes[1].legend()
+        fig.subplots_adjust(wspace=0.3)  # gap
         save_fig(fig, "fig_F1_cascade.pdf")
         save_npz("data_F1_cascade.npz", ts=ts, Nh=np.array(Nh),
                  Nphi=np.array(Nphi), P4=np.array(P4),
@@ -286,6 +287,7 @@ def main():
             ax.legend(fontsize=7)
         fig.suptitle("pre-registered 4th-order power laws "
                      "(one $H_3$ + three $H_{\\rm int}$ insertions)", y=1.04)
+        fig.subplots_adjust(wspace=0.4, top=0.87)  # gap + room for suptitle
         save_fig(fig, "fig_F3_powerlaws.pdf")
 
     save_json("summary_cascade.json", summary)
