@@ -200,8 +200,8 @@ for name, kin in kins.items():
                     .subs({lam[0]: tr[0], lam[1]: tr[1], lam[2]: tr[2]})).real
         row.append(f"{tr}:{v/base:+.3f}")
     print(f"    {name} W0={base:+8.3f}   " + "  ".join(row))
-print("    -> equal-lam value is prescription-independent (all four give")
-print("       |W(7,7,7)| consistent with the boxed -35.4375 only for the")
-print("       conservation-surface choice H0); off-diagonal ratios span a")
-print("       factor ~3-4 across prescriptions and match none of H0-H3 exactly,")
-print("       so the multi-l weighting is reported as a scheme-dependent effect.")
+print("    -> only the conservation-surface choice H0 gives W(7,7,7) = -35.4375;")
+print("       H1/H2/H3 give +47.25/+80.06/-10.50, so the equal-lam value is the")
+print("       conservation-surface (IBP-invariant) value, not prescription-independent.")
+print("       |W(7,7,7)| spans 10.5 to 80.1 across prescriptions (factor ~3 between")
+print("       the sign-consistent H0/H3); the multi-l weighting is a scheme-dependent effect.")

@@ -86,8 +86,11 @@ def main():
         results["Gop_22_from_21_21"] = md.gaunt_operator(2, 1, 2, 1, 2, 2)
         results["Gop_20_from_21_2m1"] = md.gaunt_operator(2, 1, 2, -1, 2, 0)
         results["Gop_20_from_20_20"] = md.gaunt_operator(2, 0, 2, 0, 2, 0)
-        results["forbidden_DeltaLz4"] = (
-            0.0 if (1 + 1) != -2 else 1.0)  # (2,1)+(2,1) <- (2,-2) forbidden
+        i_m = modes.index((2, -2)); f_m = modes.index((2, 1))
+        occ_i = tuple(1 if s == i_m else 0 for s in range(len(modes)))
+        occ_f = tuple(2 if s == f_m else 0 for s in range(len(modes)))
+        results["forbidden_DeltaLz4"] = float(
+            abs(H1e[fb.index[occ_f], fb.index[occ_i]]))  # <(2,1)(2,1)|H|(2,-2)>
 
     save_json("validation_summary.json", results)
     print("\nconsolidated validation numbers:")

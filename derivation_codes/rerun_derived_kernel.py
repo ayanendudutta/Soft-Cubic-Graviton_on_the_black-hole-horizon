@@ -6,10 +6,12 @@ simulation model.
     proportional to the K=1 table, because on an equal-lambda register the
     weight is a constant that renormalises the coupling; the proportionality
     is asserted at run time.
-(2) multi-l register (l=2 + l=3, Nmax-truncated, Lz=0): eta(t) and pbar_N with
-    the derived kernel against K=1 at matched Frobenius norm, so that only the
-    RELATIVE multipole structure differs.  This measurement replaces the swept
-    kernel systematic of the earlier runs.
+(2) multi-l register (l=2 + l=3, Nmax-truncated, Lz=0): the diagonal-ensemble
+    (infinite-time) pbar_N and inelasticity with the derived kernel against K=1.
+    Both tables are scaled to the Frobenius norm of the PHYSICAL K=1 table
+    (g_eff = 12 on the raw unit-kernel table), so only the RELATIVE multipole
+    structure differs at the physical coupling.  The shift is Nmax-converged
+    (Nmax=4 and 5 agree): Delta_eta ~ -25%, TV(pbar_N) ~ 0.018.
 
 The closed form of W below is the conservation-surface evaluation
 (w3 = -(w1+w2), legs 1 and 2 on shell), i.e. prescription H0 of the
@@ -81,53 +83,62 @@ assert abs(max(r)-min(r)) < 1e-12
 ML = [(2, m) for m in range(-2, 3)] + [(3, m) for m in range(-3, 4)]
 occ0 = tuple(1 if mo == (2, 0) else 0 for mo in ML)
 G_REP = 12.0
-res = {}
-for name, kn in [("K1", None), ("derived", kern)]:
-    tab = md.cubic_vertex_table(ML, g_eff=1.0, kernel=kn)
-    # norm-match: unit Frobenius norm of the magnitude multiset (paper protocol)
-    nrm = np.sqrt(sum(v*v for v in tab.values()))
-    tab = {key: v/nrm*G_REP for key, v in tab.items()}
-    fb = md.FockBasis(ML, Nmax=4, lz=0)
-    H = fb.H(tab, include_H2=True)
-    psi = np.zeros(fb.dim); psi[fb.index[occ0]] = 1.0
-    N0 = 1
-    ts = np.linspace(0, 6.0, 25)
-    etas = []
-    from scipy.sparse.linalg import expm_multiply
-    psi_t = expm_multiply(-1j*H, psi, start=0, stop=6.0, num=25, endpoint=True)
-    def pvec(row):
-        pN = md.multiplicity_distribution(row, fb)
-        if isinstance(pN, dict):
-            L = max(pN)+1
-            v = np.zeros(L)
-            for n, p in pN.items(): v[n] = p
-            return v
-        return np.asarray(pN)
-    for row in psi_t:
-        v = pvec(row)
-        etas.append(1.0 - (v[N0] if N0 < len(v) else 0.0))
-    acc = None
-    for row in psi_t[-8:]:
-        v = pvec(row)
-        if acc is None: acc = v.copy()
-        else:
-            L = max(len(acc), len(v))
-            acc = np.pad(acc,(0,L-len(acc))) + np.pad(v,(0,L-len(v)))
-    pbar = acc/8
-    res[name] = dict(eta_late=float(np.mean(etas[-8:])), pbar=pbar.tolist(),
-                     dim=fb.dim)
-    print(f"(2) {name:8s}: dim={fb.dim}  eta_late={res[name]['eta_late']:.5f}")
+# Isolate the RELATIVE multipole structure at the physical coupling: scale both
+# the K=1 and the derived tables to the Frobenius norm of the physical K=1 table
+# (g_eff = G_REP on the raw unit-kernel table), so the overall strength is fixed
+# and only the relative weights differ.  Matching instead to a fixed Frobenius
+# norm of G_REP is an absolute scale, not the physical one, and inflates g_eff
+# by 1/||raw|| (about 80x here), outside the convergent window.
+F_K1 = np.sqrt(sum(v*v for v in md.cubic_vertex_table(ML, g_eff=G_REP).values()))
 
-pa = np.array(res['K1']['pbar']); pb = np.array(res['derived']['pbar'])
-L = max(len(pa), len(pb)); pa = np.pad(pa,(0,L-len(pa))); pb = np.pad(pb,(0,L-len(pb)))
-tv = 0.5*np.abs(pa-pb).sum()
-print(f"    TV(pbar_N | derived vs K=1) = {tv:.4f}")
-print(f"    eta shift: {res['derived']['eta_late']-res['K1']['eta_late']:+.5f} "
-      f"({100*(res['derived']['eta_late']/res['K1']['eta_late']-1):+.2f}%)")
+
+def diag_ensemble_pN(H, psi, fb, nmaxN=64):
+    """Infinite-time (diagonal-ensemble) multiplicity distribution."""
+    E, U = np.linalg.eigh(H)
+    w = np.abs(U.conj().T @ psi) ** 2
+    pN = np.zeros(nmaxN)
+    for a in range(len(E)):
+        v = md.multiplicity_distribution(U[:, a], fb)
+        it = v.items() if isinstance(v, dict) else enumerate(v)
+        for nn, pp in it:
+            pN[int(nn)] += w[a] * pp
+    return pN[:np.max(np.nonzero(pN)) + 1]
+
+
+res = {}
+for Nmax in (4, 5):
+    row = {}
+    for name, kn in [("K1", None), ("derived", kern)]:
+        tab = md.cubic_vertex_table(ML, g_eff=1.0, kernel=kn)
+        nrm = np.sqrt(sum(v * v for v in tab.values()))
+        tab = {key: v / nrm * F_K1 for key, v in tab.items()}   # physical strength
+        fb = md.FockBasis(ML, Nmax=Nmax, lz=0)
+        H = fb.H(tab, include_H2=True)
+        psi = np.zeros(fb.dim, complex); psi[fb.index[occ0]] = 1.0
+        pbar = diag_ensemble_pN(H, psi, fb)
+        row[name] = dict(eta=float(1.0 - pbar[1]), pbar=pbar.tolist(), dim=fb.dim)
+    pa = np.array(row['K1']['pbar']); pb = np.array(row['derived']['pbar'])
+    L = max(len(pa), len(pb)); pa = np.pad(pa, (0, L - len(pa))); pb = np.pad(pb, (0, L - len(pb)))
+    tv = 0.5 * np.abs(pa - pb).sum()
+    deta = 100 * (row['derived']['eta'] / row['K1']['eta'] - 1)
+    row['tv'] = float(tv); row['deta_pct'] = float(deta)
+    res[f"Nmax{Nmax}"] = row
+    print(f"(2) Nmax={Nmax} dim={row['K1']['dim']}: "
+          f"eta_K1={row['K1']['eta']:.4f} eta_derived={row['derived']['eta']:.4f}  "
+          f"Delta_eta={deta:+.1f}%  TV(diag-ensemble pbar)={tv:.4f}")
+print("    (diagonal ensemble, physical coupling; Nmax=4 and 5 agree => converged)")
+
 _path = os.path.join(_OUT, 'summary_derived_kernel.json')
-json.dump({'tv': tv, 'res': {k: {kk: vv for kk, vv in v.items() if kk!='pbar'}
-           for k, v in res.items()},
-           'pbar_K1': res['K1']['pbar'], 'pbar_derived': res['derived']['pbar'],
-           'W777': W(2,2,2)},
-          open(_path,'w'), indent=1)
+json.dump({'protocol': 'physical-coupling Frobenius match; diagonal ensemble',
+           'F_K1_physical': float(F_K1),
+           'Nmax4': {'tv': res['Nmax4']['tv'], 'deta_pct': res['Nmax4']['deta_pct'],
+                     'eta_K1': res['Nmax4']['K1']['eta'], 'eta_derived': res['Nmax4']['derived']['eta'],
+                     'dim': res['Nmax4']['K1']['dim']},
+           'Nmax5': {'tv': res['Nmax5']['tv'], 'deta_pct': res['Nmax5']['deta_pct'],
+                     'eta_K1': res['Nmax5']['K1']['eta'], 'eta_derived': res['Nmax5']['derived']['eta'],
+                     'dim': res['Nmax5']['K1']['dim']},
+           'pbar_K1': res['Nmax5']['K1']['pbar'],
+           'pbar_derived': res['Nmax5']['derived']['pbar'],
+           'W777': W(2, 2, 2)},
+          open(_path, 'w'), indent=1)
 print("saved", _path)

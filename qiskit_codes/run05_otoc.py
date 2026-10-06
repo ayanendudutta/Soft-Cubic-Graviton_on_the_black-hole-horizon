@@ -50,7 +50,7 @@ def main():
     tab = md.cubic_vertex_table(modes, g_eff=G_REP * G_UNIT)
 
     # ---------------- E1: dense OTOC on the multiplet ---------------------
-    with Timer("E1: dense quadrature OTOC (thermal and single-graviton)"):
+    with Timer("E1: dense quadrature OTOC (vacuum and single-graviton)"):
         fb = md.FockBasis(modes, d=d)
         H = fb.H(tab)
         i20 = modes.index((2, 0))
@@ -62,16 +62,19 @@ def main():
         psi0 = np.zeros(fb.dim, complex)
         psi0[fb.index[occ0]] = 1.0
         C_state = md.otoc_squared_commutator(H, W, V, ts, state=psi0)
-        beta = 2 * np.pi              # kappa = 1 units: beta = 2 pi / kappa
+        # omega_l is a rest energy (the 2D mass), not a boost energy, so this
+        # Hamiltonian carries no Hawking occupation; at any horizon-scale beta,
+        # beta * omega_min >> 1 and the thermal state is the Fock vacuum.
+        beta = 4 * np.pi
         C_th = md.otoc_squared_commutator(H, W, V, ts, beta=beta)
         summary["E1_maxC_state"] = float(C_state.max())
-        summary["E1_maxC_thermal"] = float(C_th.max())
+        summary["E1_maxC_vacuum"] = float(C_th.max())
         summary["E1_beta"] = beta
 
         fig, ax = plt.subplots(figsize=(4.4, 3.0))
         ax.plot(ts, C_state, color=INK,
                 label=r"single $(2,0)$ graviton state")
-        ax.plot(ts, C_th, color=TEAL, label=rf"thermal, $\beta=2\pi$")
+        ax.plot(ts, C_th, color=TEAL, label=r"Fock vacuum")
         ax.set_xlabel("$t$")
         ax.set_ylabel(r"$C(t)=\langle|[W(t),V]|^2\rangle$")
         ax.set_title("quadrature OTOC: bounded, non-scrambling\n"

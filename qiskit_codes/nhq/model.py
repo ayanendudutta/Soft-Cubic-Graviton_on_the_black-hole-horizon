@@ -96,7 +96,7 @@ def cubic_vertex_table(modes, g_eff=1.0, R=1.0, kernel=None, tol=1e-12):
              exactly into g_eff for single-l registers; for multi-l registers
              this is the stated leading-soft modeling input); or a callable
              K(mode_i, mode_j, mode_k).
-    The distinct-pair factor 2 folds the unrestricted sum of Eq. (36) onto
+    The distinct-pair factor 2 folds the unrestricted sum of Eq. (24) onto
     i <= j -- part of the gravitationally fixed relative structure."""
     w = [omega_l(l, R) for (l, _) in modes]
     M = len(modes)

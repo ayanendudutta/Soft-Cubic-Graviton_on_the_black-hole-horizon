@@ -16,7 +16,7 @@
 set -e
 TFINAL=${TFINAL:-12}    # evolution time (units R_S/c)
 DT=${DT:-0.1}           # integrator step (validated to ~1e-3)
-CHI=${CHI:-24}          # bond-dimension cap (converged; trunc err ~1e-6)
+CHI=${CHI:-24}          # bond-dimension cap (converged; trunc err <1e-3, reaching ~6e-4 at l=7)
 DSNAP=${DSNAP:-1}       # snapshot spacing
 
 for L in 2 3 4 5 6 7; do

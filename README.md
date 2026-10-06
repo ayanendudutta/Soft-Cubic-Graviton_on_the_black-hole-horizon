@@ -10,8 +10,8 @@ at leading soft order the self-coupling of the purely traceless longitudinal
 polarizations is identically zero, because with the trace/transverse-scalar
 sector switched off the fluctuation reduces to a two-dimensional block whose
 `sqrt(-g) R` is a total (Euler) derivative at every order in `kappa`. The
-surviving interaction lives in the trace sector, with on-shell equal-multipole
-weight
+surviving interaction lives in the trace sector, with the conservation-surface
+equal-multipole weight
 
 ```
 W(lam, lam, lam) = -3 lam (2 lam^2 + lam + 3) / (lam + 1)^2 ,   lam = l^2 + l + 1
@@ -42,7 +42,7 @@ testing whether the perturbative rigidity persists as the register grows.
 ├── derivation_codes/            symbolic derivation and its verifications
 │   ├── derive_L3.py               cubic expansion of sqrt(-g) R  ->  L23.pkl
 │   ├── cubic.py                   momentum-space vertex; vanishing theorem  ->  V3.pkl
-│   ├── onshell.py                 on-shell weight W(lam1, lam2, lam3)  ->  W.pkl
+│   ├── onshell.py                 conservation-surface weight W(lam1,lam2,lam3) -> W.pkl
 │   ├── organize.py                exact covariant decomposition  ->  fit.pkl
 │   ├── dilaton_W.py               independent (warped-product) re-derivation of W
 │   ├── theorem_explicit.py        term-by-term collapse of the traceless sector
@@ -444,9 +444,10 @@ full-metric-raised current.
 
 **The off-diagonal weights are prescription-dependent, and the code says so.**
 `dilaton_W.py` evaluates `W` under four defensible off-shell prescriptions and
-prints the spread. The equal-`lambda` value is prescription-independent and
-reproduces `-35.4375`; the off-diagonal ratios span a factor of about three to
-four. The multi-multipole shift reported in the paper is therefore one
+prints the spread. The equal-`lambda` value is the conservation-surface
+(integration-by-parts-invariant) value; only that choice reproduces `-35.4375`
+(H1/H2/H3 give +47.25/+80.06/-10.50, |W(7,7,7)| spanning 10.5 to 80.1, a factor
+~3 between the sign-consistent H0/H3). The multi-multipole shift reported in the paper is therefore one
 representative prescription carrying an explicitly quantified scheme
 systematic, not a sharp number. `rerun_derived_kernel.py` propagates one
 prescription through the model and measures the consequence
@@ -457,7 +458,7 @@ exact overall constant.
 **The simulation's non-tautology test** is the structure ablation in `run02`:
 the gravitationally fixed vertex table is re-run against a uniform-magnitude
 table and five magnitude-reshuffled tables with the selection rules left
-intact. The inelasticity varies ninefold across variants while every variant
+intact. The inelasticity varies 8.4-fold across variants while every variant
 remains equally non-ergodic — which is what licenses the paper's decomposition
 of the signal into a generic part and a structure-specific part.
 
@@ -532,8 +533,11 @@ what any number produced here can mean.
   eigenstates and stay at the exact-diagonalization register.
 - All quantum-circuit results are Aer statevector or density-matrix
   simulations. Hardware execution is deferred on the budget computed in
-  `run07`: at ten qubits, a ten-percent bias on the inelasticity requires a
-  two-qubit error rate `p2 ≲ 5e-5`. Depolarizing noise drives the state toward
+  `run07`: on the six-qubit noise register a ten-percent bias on the
+  inelasticity requires a two-qubit error rate `p2 ≲ 1e-7` (computed from the
+  mixing model as `(1-F)/n_cx` with `1-F ~ 1.8e-3`); the scanned grid starts at
+  `5e-5`, already far into the mixed regime, so it only bounds the budget from
+  above. Depolarizing noise drives the state toward
   the maximally mixed state, whose spurious inelasticity (`0.953` on that
   register) dwarfs the ideal signal — noise manufactures apparent particle
   production, so any hardware measurement of the inelasticity must be reported
@@ -551,4 +555,4 @@ what any number produced here can mean.
 ## Citation
 
 Please cite the paper when using this code. A. Dutta, *The leading-soft cubic
-graviton self-interaction on the black-hole horizon*.
+graviton self-interaction on the black-hole horizon*, arXiv:2607.21066 [gr-qc].

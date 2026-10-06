@@ -175,11 +175,11 @@ def pN_from_counts(counts, reg):
 def otoc_hadamard_test_circuit(prep, U_evo, W_qubits, V_qubits,
                                W_pauli="Z", V_pauli="Z"):
     """Real-part Hadamard-test interferometer for
-        F(t) = <psi| W V(t) W V(t) |psi>,  V(t) = U^dag V U,
+        F(t) = <psi| W(t) V W(t) V |psi>,  W(t) = U^dag W U,
     with Pauli (Hermitian-unitary) probes; then C(t) = 2 - 2 Re F.
-    Controlled-(U^dag V U) is realised as U ; c-V ; U^dag (conjugation), so
+    Controlled-(U^dag W U) is realised as U ; c-W ; U^dag (conjugation), so
     only the Pauli probes are controlled.  Appended gate sequence
-        [U, cV, U^dag, cW] x 2, final H, measure <Z_anc> = Re F.
+        [U, cW, U^dag, cV] x 2, final H, measure <Z_anc> = Re F.
     prep acts on the system register; the ancilla is the LAST qubit."""
     n = U_evo.num_qubits
     qc = QuantumCircuit(n + 1, 1)
@@ -201,9 +201,9 @@ def otoc_hadamard_test_circuit(prep, U_evo, W_qubits, V_qubits,
 
     for _ in range(2):
         qc.compose(U_evo, qubits=range(n), inplace=True)
-        c_pauli(V_pauli, V_qubits)
-        qc.compose(Udag, qubits=range(n), inplace=True)
         c_pauli(W_pauli, W_qubits)
+        qc.compose(Udag, qubits=range(n), inplace=True)
+        c_pauli(V_pauli, V_qubits)
     qc.h(anc)
     qc.measure(anc, 0)
     return qc

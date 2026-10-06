@@ -31,8 +31,8 @@ figure whose sub-blocks are boxed for readability.
                            three-mode register at d = 2 (3 system qubits + 1
                            ancilla).  Controlled time evolution is avoided by
                            conjugation, so only the single-qubit Pauli probes
-                           are controlled and the sequence [U_T, cV, U_T^dag,
-                           cW] is applied twice.
+                           are controlled and the sequence [U_T, cW, U_T^dag,
+                           cV] is applied twice.
 
 Boxing convention: for Q2 and Q3 the segment / evolution blocks are wrapped
 into labelled composite gates so the diagram stays readable.  Wrapping is

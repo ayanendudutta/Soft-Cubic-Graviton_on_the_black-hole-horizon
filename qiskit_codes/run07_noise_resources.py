@@ -142,9 +142,19 @@ def main():
         fids, etas = np.array(fids), np.array(etas)
         # per-gate budget: p2 at which |eta - eta_ideal| > 0.1 * eta_ideal
         bias = np.abs(etas - eta_ideal)
-        bad = np.where(bias > 0.1 * max(eta_ideal, 1e-9))[0]
-        p2_budget = float(p2s[bad[0]]) if len(bad) else float(p2s[-1])
+        # The scanned grid starts at p2 = 5e-5, where the state is already
+        # strongly mixed, so the first failing grid point is NOT the budget.
+        # A 10% bias is reached when the infidelity mixes in enough mixed-state
+        # inelasticity: eta ~ F*eta_ideal + (1-F)*eta_mix, so
+        # |eta - eta_ideal| = 0.1*eta_ideal needs (1-F) = 0.1*eta_ideal/(eta_mix-eta_ideal).
+        # With depolarizing fidelity 1-F ~ p2 * n_cx, the budget is p2 ~ (1-F)/n_cx.
+        oneF_budget = 0.1 * eta_ideal / max(eta_mix - eta_ideal, 1e-12)
+        p2_budget = float(oneF_budget / max(cxs, 1))
+        summary["G1_oneminusF_budget_10pct"] = float(oneF_budget)
         summary["G1_p2_budget_10pct"] = p2_budget
+        summary["G1_p2_first_failing_gridpoint"] = float(
+            p2s[np.where(bias > 0.1 * max(eta_ideal, 1e-9))[0][0]]
+            if np.any(bias > 0.1 * max(eta_ideal, 1e-9)) else p2s[-1])
         summary["G1_table"] = [dict(p2=float(a), F=float(b), eta=float(c))
                                for a, b, c in zip(p2s, fids, etas)]
 
